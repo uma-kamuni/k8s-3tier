@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: three-tier
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: php
+          image: php:8.1-apache
+          ports:
+            - containerPort: 80
+          command: ["sh", "-c"]
+          args:
+            - |
+              docker-php-ext-install mysqli
+              apache2-foreground
+          volumeMounts:
+            - name: backend-code
+              mountPath: /var/www/html
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+      volumes:
+        - name: backend-code
+          configMap:
+            name: backend-config

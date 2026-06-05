@@ -1,0 +1,118 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-html
+  namespace: three-tier
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>K8s 3-Tier</title>
+      <style>
+        body {
+          font-family: "Segoe UI", Tahoma, sans-serif;
+          background: linear-gradient(135deg, #667eea, #764ba2);
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .box {
+          width: 520px;
+          background: #ffffff;
+          padding: 25px;
+          border-radius: 14px;
+          box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+        h2 {
+          text-align: center;
+          color: #4a4a4a;
+          margin-bottom: 20px;
+        }
+        input, textarea {
+          width: 100%;
+          padding: 12px;
+          border-radius: 8px;
+          border: 1px solid #ccc;
+          font-size: 14px;
+        }
+        textarea {
+          resize: none;
+          height: 90px;
+        }
+        button {
+          width: 100%;
+          padding: 12px;
+          margin-top: 10px;
+          border: none;
+          border-radius: 8px;
+          background: linear-gradient(90deg, #667eea, #764ba2);
+          color: white;
+          font-size: 16px;
+          cursor: pointer;
+        }
+        .delete-btn {
+          background: #ef4444;
+          margin-top: 8px;
+        }
+        .msg {
+          background: linear-gradient(135deg, #e0e7ff, #f3e8ff);
+          padding: 12px;
+          margin: 10px 0;
+          border-radius: 10px;
+        }
+        .time {
+          font-size: 12px;
+          color: #6b7280;
+        }
+      </style>
+    </head>
+
+    <body>
+      <div class="box">
+        <h2>*****Kubernetes 3-Tier Application*****</h2>
+
+        <input id="name" placeholder="Your Name"><br><br>
+        <textarea id="msg" placeholder="Type your message here..."></textarea><br><br>
+        <button onclick="send()">Submit Message</button>
+
+        <h3>Messages !!!!!</h3>
+        <div id="data">Loading...</div>
+      </div>
+
+      <script>
+        function load() {
+          fetch("/api")
+            .then(r => r.text())
+            .then(d => document.getElementById("data").innerHTML = d);
+        }
+
+        function send() {
+          const nameVal = document.getElementById("name").value;
+          const msgVal  = document.getElementById("msg").value;
+
+          fetch("/api", {
+            method: "POST",
+            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+            body: `name=${encodeURIComponent(nameVal)}&message=${encodeURIComponent(msgVal)}`
+          }).then(() => {
+            document.getElementById("msg").value = "";
+            load();
+          });
+        }
+
+        function deleteMsg(id) {
+          if (!confirm("Delete this message?")) return;
+
+          fetch("/api", {
+            method: "POST",
+            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+            body: `action=delete&id=${id}`
+          }).then(() => load());
+        }
+
+        load();
+      </script>
+    </body>
+    </html>

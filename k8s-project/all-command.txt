@@ -1,0 +1,66 @@
+     
+  aws eks update-kubeconfig --name <cluster_name> --region <region>    
+     
+     
+     *** DATABASE COMMAND ****
+     kubectl apply -f database/01-mysql-secret.yaml
+     kubectl apply -f database/02-mysql-service.yaml
+     kubectl apply -f database/03-mysql-statefulset.yaml
+
+///// Access database ///
+
+     kubectl exec -it mysql-0 -n three-tier -- mysql -u appuser -papppass appdb
+     mysql> SHOW TABLES;
+     mysql> use appdb;
+     mysql> SELECT * FROM messages;
+     mysql> EXIT;
+# This command connects to the MySQL database pod in the 'three-tier' namespace
+# using the MySQL client with the provided username and password.
+
+
+   *** FRONTEND COMMAND ****
+
+     kubectl exec -it <frontend-pod-name> -n three-tier -- curl http://localhost:8080/
+     kubectl apply -f frontend/01-frontend-html-configmap.yaml
+     kubectl rollout restart deployment frontend -n three-tier
+
+# These commands interact with the frontend pod in the 'three-tier' namespace.
+     kubectl apply -f 02-nginx-configmap.yaml
+     kubectl rollout restart deployment frontend -n three-tier
+
+# The first command curls the frontend service to test connectivity.
+     kubectl apply -f 03-frontend-deployment.yaml
+
+# The second command updates the frontend HTML ConfigMap.
+     kubectl apply -f 04-frontend-service.yaml
+
+     ***** BACKEND COMMAND ********
+
+     kubectl exec -it <backend-pod-name> -n three-tier --curl http://localhost:8080/
+     kubectl apply -f backend/01-backend-configmap.yaml
+     kubectl apply -f backend/02-backend-deployment.yaml
+     kubectl rollout restart deployment backend  -n three-tier
+     kubectl apply -f backend/03-backend-service.yaml
+
+******* HPA COMMAND **********
+     kubectl apply -f hpa/backend-hpa.yaml
+     kubectl apply -f hpa/frontend-hpa.yaml
+     
+
+
+/////////////////////
+kubectl get svc -n three-tier
+
+kubectl get all -n three-tier
+kubectl get pod -n three-tier
+kubectl get node -n three-tier
+
+////////
+
+1.Install matrics server 
+
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+  
+ 2. check matrics server exit or not
+
+  kubectl get pods -n kube-system | grep metrics

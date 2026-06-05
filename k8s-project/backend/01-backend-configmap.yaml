@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: three-tier
+data:
+  index.php: |
+    <?php
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Methods: GET, POST");
+    header("Access-Control-Allow-Headers: Content-Type");
+
+    $conn = new mysqli("mysql", "appuser", "apppass", "appdb");
+    if ($conn->connect_error) {
+        http_response_code(500);
+        echo json_encode(["error" => "Database connection failed"]);
+        exit;
+    }
+
+    // =========================
+    // HANDLE POST REQUEST (JSON RESPONSE)
+    // =========================
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        header('Content-Type: application/json');
+
+        $name = $_POST['name'] ?? '';
+        $message = $_POST['message'] ?? '';
+
+        if (!empty($name) && !empty($message)) {
+            $stmt = $conn->prepare("INSERT INTO messages (name, message) VALUES (?, ?)");
+            $stmt->bind_param("ss", $name, $message);
+            $stmt->execute();
+            $stmt->close();
+
+            echo json_encode([
+                "name" => $name,
+                "message" => $message
+            ]);
+            $conn->close();
+            exit;
+        }
+
+        echo json_encode(["error" => "Invalid input"]);
+        $conn->close();
+        exit;
+    }
+
+    // =========================
+    // HANDLE GET REQUEST (HTML OUTPUT)
+    // =========================
+    $result = $conn->query("SELECT name, message, created_at FROM messages ORDER BY id DESC");
+
+    while ($row = $result->fetch_assoc()) {
+        echo "<div class='msg'>
+                <b>{$row['name']}</b>: {$row['message']}
+                <div class='time'>{$row['created_at']}</div>
+              </div>";
+    }
+
+    $conn->close();
+    ?>
